@@ -1,0 +1,127 @@
+Issuing Apology Credits                                                                                                                               
+OVERVIEW: Optimal Credit Amount
+
+We have added the  Optimal Credit Amount field to the Order Resolution Tool (ORT).
+
+- This field will recommend the best apology credit amount to offer the Consumer.
+- This will help reduce C&R issuance while maintaining an exceptional Consumer experience!
+
+FREQUENTLY ASKED QUESTIONS:
+1. If I see the “Optimal Credit Amount” field, am I required to offer apology credits?
+
+NO. Only offer apology credits if all of the following requirements are met:
+- You have already offered C&R aligned with our policy (e.g., you selected the issue in ORT and offered the C&R amount that the tool permits)
+- The Consumer is very unhappy with the C&R offered
+- The situation warrants more compensation (e.g., You know the Cx had an extremely bad experience, and the C&R policy is insulting or unfair).
+
+2. Am I allowed to issue more than the Optimal Credit Amount?
+YES. We are not making changes to the maximum amount. You are allowed to issue more than the suggested amount if you tried offering the suggested amount, but the Cx explicitly states that they want more C&R.
+
+Cx might say: 
+- "Can I at least get some extra credits to cover the delivery costs of my re-order?"
+- “That’s not enough money! Do you think $5.00 in apology credits is going to fix this?! I need a full refund for the missing item!”
+
+3. Will I be able to issue apology credits to abusers?
+- NO. Please continue to kindly deny C&R to abusers.
+
+4. Why would the Optimal Credit Amount show $0.00?
+- This means that the Optimal Credit Amount has already been issued by another Teammate. Although you are able to issue more apology credits, we advise against issuing more.
+
+
+Step	Action	
+Step 1:		
+Action : Check credit and refund abuser status
+Messaging/ Workflow : At the top of THQ, do you see the yellow Credit & Refund Abuse Badge?
+
+Yes: 
+Do not issue additional apology credits.
+
+No: 
+Continue to Step 2
+Step 2:
+Action :	Is the consumer threatening legal or regulatory action?	
+Messaging/ Workflow : Is the consumer claiming they will report us to a legal/regulatory body, or mentioning any of the following?:
+
+- BBB (Better Business Bureau)
+- Consumer protection
+- Consumer/competition regulator
+
+Yes: Continue to Step 6
+No: Continue to Step 3
+
+Step 3:
+Action : Is there a risk to DoorDash’s reputation?	
+Messaging/ Workflow : Is the Consumer claiming they will post to social media, engage with a media outlet, or escalate to a senior executive?:
+
+- I’ll be posting about this on social media/Twitter/Facebook/etc.
+- I’ll be reporting this to your CEO/Tony Xu
+- I’ll be reporting this to the New York Times/other news outlet
+
+Yes: Continue to Step 6
+No: Continue to Step 4
+
+Step 4:
+Action : Is the Consumer frustrated because they’ve had multiple recent issues?	
+Messaging/ Workflow  : Did the Consumer mention they’ve had multiple recent issues or frustrated because they’ve had to speak/chat with multiple support representatives?
+
+Confirm the Consumer’s claims by checking the consumer’s history in THQ and Salesforce. Has the Consumer had:
+
+- 2 or more issues within their last 10 orders?
+- 2 or more issues within the past 10 days? 
+- 2 or more cases opened for the same issue/order?
+- 2 or more call transfers for the same issue/order?
+
+Yes, any of the above: Continue to Step 6
+No, none of the above: Continue to Step 5
+Step 5:
+Action :	Is the Consumer frustrated because of another reason?	
+Messaging/ Workflow : Did the Consumer mention any of the following?
+
+- They are frustrated because they were only provided a partial refund even though more than half of the items in their order had major issues
+
+- The issue has negatively impacted a special occasion (a birthday, holiday, etc.)
+
+- They will stop ordering from DoorDash
+
+- They will cancel DashPass
+
+- They had issues related to a scheduled order
+
+Yes: Continue to Step 6
+No: 
+Do not issue apology credits. 
+
+Suggested response:
+“We review each order on a case-by-case basis. On this occasion, I am not able to provide any additional compensation due to DoorDash’s policy, I understand this can be frustrating.”
+
+Follow case completion steps relevant to the Consumer's issue (e.g. if it’s a missing item issue, follow steps for missing item issue case completion)
+
+Step 6:
+Action :	Determine how much credits to issue.
+Messaging/ Workflow : Is the Consumer a VIP/Priority Customer?
+Yes:	
+Use the info below to determine the amount to issue:
+
+Order Subtotal > Suggested Amount
+1. <=$40 > $10
+2. $41-$60 > $20
+3. $61-$80 > $30
+4. $81-$100 > $40
+5. >$100 > 50% of subtotal
+
+Max Amount: 
+- 50% of subtotal, up to $50
+- Local Advocate approval required if amount exceeds $50 OR 50% of order subtotal
+
+Follow case completion steps relevant to the Consumer's issue (e.g. if it’s a missing item issue, follow steps for missing items case completion)	Use the info below to determine the amount to issue:
+
+No:
+Use the info below to determine the amount to issue:
+Order Subtotal > Suggested Amount
+1. <=$40 > $5
+2. $41-$60 > $10
+3. $61-$80 > $15
+4. $81-$100 > $20
+5. >$100 > 20% of subtotal
+
+Follow case completion steps relevant to the Consumer's issue (e.g. if it’s a missing item issue, follow steps for missing item issue case completion)
