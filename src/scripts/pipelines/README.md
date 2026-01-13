@@ -9,10 +9,11 @@ The pipeline performs the following steps:
 2. Create derived features (IS_ND, IS_MnI, IS_PFQ, IS_OSI, IS_LATE, IS_WOD)
 3. Handle missing values
 4. Convert data types for LightGBM compatibility
-5. Apply log transformations to skewed features
-6. Load the pre-trained LightGBM model
-7. Generate escalation predictions
-8. Export results to CSV
+5. Save non-log version of the dataset (before log transformations)
+6. Apply log transformations to skewed features
+7. Load the pre-trained LightGBM model
+8. Generate escalation predictions
+9. Export results to CSV
 
 ## Requirements
 
@@ -78,11 +79,56 @@ Note: Missing columns will be filled with default values (0 for numeric, 'Unknow
 
 ## Output Data
 
-The output CSV contains:
+The pipeline generates two output files by default:
+
+### 1. Main Predictions File (`<output>.csv`)
+
+Contains the final predictions with log-transformed features:
 - `DELIVERY_ID`: Original delivery identifier
-- All input features (processed)
+- All input features (log-transformed where applicable)
 - `PREDICTED_ESCALATION_PROB`: Probability of escalation (0.0 to 1.0)
 - `PREDICTED_ESCALATION`: Binary prediction (0 or 1) based on threshold
+
+### 2. Non-Log Version (`<output>_non_log.csv`)
+
+Contains the processed dataset BEFORE log transformations are applied:
+- `DELIVERY_ID`: Original delivery identifier
+- All input features in their original scale (not log-transformed)
+
+**Why is the non-log version useful?**
+
+The non-log version preserves the original scale of numeric features, which is useful for:
+- **Feature analysis and interpretation**: Original values like `SUBTOTAL=$45.00` are more interpretable than log-transformed values like `SUBTOTAL=3.83`
+- **Joining with other datasets**: Other datasets in your pipeline may use original (non-log) values
+- **Debugging and validation**: Easier to verify data correctness with original values
+- **Business reporting**: Original monetary and count values are more meaningful for stakeholders
+
+**Data lineage for non-log version:**
+
+```
+Input CSV (dataset.csv)
+    |
+    v
+Feature Engineering (IS_ND, IS_MnI, IS_PFQ, IS_OSI, IS_LATE, IS_WOD)
+    |
+    v
+Handle Missing Values (numeric -> 0, categorical -> 'Unknown')
+    |
+    v
+Convert Data Types (categorical -> str, numeric -> float64)
+    |
+    v
+[SAVED HERE] --> <output>_non_log.csv (original feature scale)
+    |
+    v
+Log Transformations (log1p for skewed, sign-preserving log for negative)
+    |
+    v
+Model Predictions
+    |
+    v
+[SAVED HERE] --> <output>.csv (log-transformed + predictions)
+```
 
 ## Usage
 
@@ -91,6 +137,10 @@ The output CSV contains:
 ```bash
 python escalation_prediction_pipeline.py --input <input_csv> --output <output_csv>
 ```
+
+This creates two files:
+- `<output>.csv` - Predictions with log-transformed features
+- `<output>_non_log.csv` - Dataset before log transformations
 
 ### With Custom Model Path
 
@@ -108,6 +158,17 @@ python escalation_prediction_pipeline.py \
     --input data.csv \
     --output predictions.csv \
     --threshold 0.3
+```
+
+### Without Saving Non-Log Version
+
+If you do not need the non-log version:
+
+```bash
+python escalation_prediction_pipeline.py \
+    --input data.csv \
+    --output predictions.csv \
+    --no-save-non-log
 ```
 
 ### Quiet Mode (Minimal Output)
@@ -128,6 +189,7 @@ python escalation_prediction_pipeline.py \
 | --model | -m | No | model/v1_lgb_1125_fold3.pkl | Path to pre-trained model |
 | --threshold | -t | No | 0.5 | Classification threshold |
 | --quiet | -q | No | False | Run in quiet mode |
+| --no-save-non-log | - | No | False | Skip saving the non-log version |
 
 ## Examples
 
@@ -140,6 +202,10 @@ python src/scripts/pipelines/escalation_prediction_pipeline.py \
     --output dataset/processed_dataset/dataset_predictions.csv
 ```
 
+This creates:
+- `dataset/processed_dataset/dataset_predictions.csv`
+- `dataset/processed_dataset/dataset_predictions_non_log.csv`
+
 ### Example 2: With Lower Threshold for Higher Recall
 
 ```bash
@@ -149,7 +215,16 @@ python src/scripts/pipelines/escalation_prediction_pipeline.py \
     --threshold 0.3
 ```
 
-### Example 3: Batch Processing
+### Example 3: Only Predictions (No Non-Log File)
+
+```bash
+python src/scripts/pipelines/escalation_prediction_pipeline.py \
+    --input dataset/processed_dataset/dataset.csv \
+    --output results/predictions.csv \
+    --no-save-non-log
+```
+
+### Example 4: Batch Processing
 
 ```bash
 for file in dataset/batches/*.csv; do
@@ -176,6 +251,25 @@ Loading dataset from: dataset/processed_dataset/dataset.csv
 Dataset shape: (1414041, 195)
 Columns: 195
 
+------------------------------------------------------------
+Step 2: Feature Engineering
+------------------------------------------------------------
+Created defect category features:
+  - IS_ND (Never Delivered): 39,357 cases
+  - IS_MnI (Missing/Incorrect): 78,908 cases
+  ...
+
+------------------------------------------------------------
+Step 5: Applying Log Transformations
+------------------------------------------------------------
+Saved non-log version to: dataset/processed_dataset/dataset_predictions_non_log.csv
+  (Contains original feature values before log transformation)
+Identified 52 skewed features for log1p transformation
+Identified 5 features with negative values
+Applying log transformations...
+  Applied log1p to 52 features
+  Applied sign-preserving log to 5 features
+
 ...
 
 ============================================================
@@ -195,6 +289,10 @@ Predicted Escalations (threshold=0.5):
   - Not Escalated: 1,400,910
   - Predicted escalation rate: 0.93%
 
+Output Files:
+  - Predictions (log-transformed): dataset/processed_dataset/dataset_predictions.csv
+  - Non-log version: dataset/processed_dataset/dataset_predictions_non_log.csv
+
 Completed at: 2025-01-13 10:32:15
 ```
 
@@ -209,6 +307,8 @@ Completed at: 2025-01-13 10:32:15
    - Higher threshold (0.7): Higher precision, more false negatives
 
 4. Large datasets may require significant memory. For datasets over 1M rows, ensure at least 8GB of available RAM.
+
+5. The non-log version file can be large for big datasets. Use `--no-save-non-log` if disk space is a concern and you do not need the non-log version.
 
 ## Troubleshooting
 
@@ -227,3 +327,6 @@ For large datasets, process in batches or increase system memory.
 
 If you see warnings about missing features, the pipeline will use default values. For best results, ensure your dataset contains the recommended columns listed above.
 
+### Non-Log File Not Created
+
+Ensure you are not using the `--no-save-non-log` flag. By default, the non-log version is always saved.

@@ -9,14 +9,25 @@ Pipeline Steps:
 2. Create derived features (IS_ND, IS_MnI, IS_PFQ, IS_OSI, etc.)
 3. Handle missing values
 4. Convert data types for LightGBM
-5. Apply log transformations to skewed features
-6. Load the pre-trained model
-7. Generate escalation predictions
-8. Export results to CSV
+5. Save non-log version of dataset (before log transformations)
+6. Apply log transformations to skewed features
+7. Load the pre-trained model
+8. Generate escalation predictions
+9. Export results to CSV
+
+Output Files:
+- <output>.csv: Final predictions with log-transformed features
+- <output>_non_log.csv: Dataset before log transformations (original feature scale)
+
+The non-log version is useful for:
+- Feature analysis and interpretation (original scale values)
+- Joining with other datasets that use original values
+- Debugging and validation
 
 Usage:
     python escalation_prediction_pipeline.py --input <input_csv> --output <output_csv>
     python escalation_prediction_pipeline.py --input <input_csv> --output <output_csv> --model <model_path>
+    python escalation_prediction_pipeline.py --input <input_csv> --output <output_csv> --no-save-non-log
 
 Author: Negotiation Agent Team
 """
@@ -444,7 +455,8 @@ def generate_predictions(model, df: pd.DataFrame, features: list,
 # ==============================================================================
 
 def run_pipeline(input_path: str, output_path: str, model_path: str, 
-                 threshold: float = 0.5, verbose: bool = True) -> pd.DataFrame:
+                 threshold: float = 0.5, save_non_log: bool = True,
+                 verbose: bool = True) -> pd.DataFrame:
     """
     Run the complete escalation prediction pipeline.
     
@@ -453,6 +465,7 @@ def run_pipeline(input_path: str, output_path: str, model_path: str,
         output_path: Path to output CSV file
         model_path: Path to the pre-trained model pickle file
         threshold: Classification threshold for escalation prediction
+        save_non_log: If True, save a non-log transformed version of the dataset
         verbose: If True, print progress information
         
     Returns:
@@ -495,11 +508,39 @@ def run_pipeline(input_path: str, output_path: str, model_path: str,
         print("-" * 60)
     df = convert_feature_dtypes(df, CATEGORICAL_FEATURES, NUMERIC_FEATURES, verbose=verbose)
     
-    # Step 5: Apply log transformations
+    # Step 5: Save non-log version and apply log transformations
     if verbose:
         print("\n" + "-" * 60)
         print("Step 5: Applying Log Transformations")
         print("-" * 60)
+    
+    # Save the non-log version BEFORE applying log transformations
+    # This preserves the original scale of numeric features for analysis
+    if save_non_log:
+        # Generate non-log output path based on main output path
+        output_path_obj = Path(output_path)
+        non_log_filename = output_path_obj.stem + "_non_log" + output_path_obj.suffix
+        non_log_path = output_path_obj.parent / non_log_filename
+        
+        # Restore delivery IDs for non-log version
+        df_non_log = df.copy()
+        if delivery_ids is not None:
+            df_non_log['DELIVERY_ID'] = delivery_ids
+        
+        # Determine columns for non-log output
+        non_log_cols = ['DELIVERY_ID'] if 'DELIVERY_ID' in df_non_log.columns else []
+        non_log_cols.extend([f for f in FINAL_FEATURES if f in df_non_log.columns])
+        
+        # Create output directory if needed
+        output_dir = os.path.dirname(str(non_log_path))
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+        
+        df_non_log[non_log_cols].to_csv(non_log_path, index=False)
+        if verbose:
+            print(f"Saved non-log version to: {non_log_path}")
+            print(f"  (Contains original feature values before log transformation)")
+    
     skewed_cols, negative_cols = identify_skewed_features(df, NUMERIC_FEATURES)
     if verbose:
         print(f"Identified {len(skewed_cols)} skewed features for log1p transformation")
@@ -580,6 +621,13 @@ def run_pipeline(input_path: str, output_path: str, model_path: str,
         print(f"  - Escalated: {(df_transformed['PREDICTED_ESCALATION'] == 1).sum():,}")
         print(f"  - Not Escalated: {(df_transformed['PREDICTED_ESCALATION'] == 0).sum():,}")
         print(f"  - Predicted escalation rate: {df_transformed['PREDICTED_ESCALATION'].mean():.2%}")
+        print(f"\nOutput Files:")
+        print(f"  - Predictions (log-transformed): {output_path}")
+        if save_non_log:
+            output_path_obj = Path(output_path)
+            non_log_filename = output_path_obj.stem + "_non_log" + output_path_obj.suffix
+            non_log_path = output_path_obj.parent / non_log_filename
+            print(f"  - Non-log version: {non_log_path}")
         print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     return df_output
@@ -592,7 +640,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Run with default model path
+    # Run with default model path (creates predictions.csv and predictions_non_log.csv)
     python escalation_prediction_pipeline.py --input data.csv --output predictions.csv
 
     # Run with custom model path
@@ -600,6 +648,9 @@ Examples:
 
     # Run with custom threshold
     python escalation_prediction_pipeline.py --input data.csv --output predictions.csv --threshold 0.3
+
+    # Run without saving non-log version
+    python escalation_prediction_pipeline.py --input data.csv --output predictions.csv --no-save-non-log
 
     # Run in quiet mode
     python escalation_prediction_pipeline.py --input data.csv --output predictions.csv --quiet
@@ -640,6 +691,12 @@ Examples:
         help='Run in quiet mode (minimal output)'
     )
     
+    parser.add_argument(
+        '--no-save-non-log',
+        action='store_true',
+        help='Skip saving the non-log transformed version of the dataset'
+    )
+    
     args = parser.parse_args()
     
     # Determine model path
@@ -664,6 +721,7 @@ Examples:
             output_path=args.output,
             model_path=model_path,
             threshold=args.threshold,
+            save_non_log=not args.no_save_non_log,
             verbose=not args.quiet
         )
     except Exception as e:
